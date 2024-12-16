@@ -76,21 +76,7 @@ namespace BookcastLexicon
 
         private void button5_Click(object sender, EventArgs e)
         {
-            switch(button5.Text) 
-            {
-                case "Übergeben":
-                    textBox1.Text = Program.CommitValues(splitStrings(textBox1.Text));
-                    break;
-
-                case "Löschen":
-                    textBox1.Text = Program.DeleteValues(splitStrings(textBox1.Text));
-                    break;
-
-                case "Suchen":
-
-                    textBox1.Text = Program.FindValue(textBox1.Text);
-                    break;
-            }
+            hasEnteredPrompt();
         }
 
         private string[] splitStrings(string input) 
@@ -98,6 +84,39 @@ namespace BookcastLexicon
             return input.Split('-');
         }
 
+        private void textBox1_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                hasEnteredPrompt();
+            }
+        }
 
+        private void hasEnteredPrompt() 
+        {
+            switch (button5.Text)
+            {
+                case "Übergeben":
+                    textBox1.Text = Program.CommitValues(splitStrings(textBox1.Text.Trim()));
+                    break;
+
+                case "Löschen":
+                    textBox1.Text = Program.DeleteValues(splitStrings(textBox1.Text.Trim()));
+                    break;
+
+                case "Suchen":
+
+                    textBox1.Text = Program.FindValue(textBox1.Text.Trim());
+                    break;
+            }
+
+            button6.Show();
+        }
+
+        private void button6_Click(object sender, EventArgs e)
+        {
+            textBox1.Clear();
+            button6.Hide();
+        }
     }
 }

@@ -30,7 +30,7 @@ namespace BookcastLexicon
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Form1());  // MainForm sollte dein Formular sein
+            Application.Run(new Form1()); 
         }
 
         static SQLiteConnection CreateConnection()
