@@ -6,6 +6,9 @@ using System.Data.SQLite;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ClosedXML.Excel;
+using Excel = Microsoft.Office.Interop.Excel;
+using System.IO;
 
 namespace BookcastLexicon
 {
@@ -14,6 +17,7 @@ namespace BookcastLexicon
 
         public static SQLiteConnection sqlite_conn;
 
+        [STAThread]
         static void Main(string[] args)
         {
 
@@ -49,7 +53,7 @@ namespace BookcastLexicon
             return sqlite_conn;
         }
 
-        static void CreateTable()
+        public static void CreateTable()
         {
 
             SQLiteCommand sqlite_cmd;
@@ -104,16 +108,37 @@ namespace BookcastLexicon
             conn.Close();
         }
 
-        static void DropTable(SQLiteConnection conn) 
+        public static void DropTable()
         {
-                SQLiteCommand sqlite_cmd;
+            // Zeige eine MessageBox zur Bestätigung an
+            DialogResult dialogResult = MessageBox.Show("Möchten Sie die Datenbank wirklich löschen?", "Bestätigung", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
 
-                string dropTableSQL = "DROP TABLE IF EXISTS BookcastDB";
+            // Wenn der Benutzer mit "Ja" bestätigt
+            if (dialogResult == DialogResult.Yes)
+            {
+                try
+                {
+                    // SQL-Befehl zum Löschen der Tabelle
+                    string dropTableSQL = "DROP TABLE IF EXISTS BookcastDB";
 
-                sqlite_cmd = conn.CreateCommand();
-                sqlite_cmd.CommandText = dropTableSQL;
-                sqlite_cmd.ExecuteNonQuery();
+                    SQLiteCommand sqlite_cmd = sqlite_conn.CreateCommand();
+                    sqlite_cmd.CommandText = dropTableSQL;
+                    sqlite_cmd.ExecuteNonQuery();
 
+                    // Bestätigung über erfolgreichen Löschvorgang
+                    MessageBox.Show("Die Datenbanktabelle wurde erfolgreich gelöscht.", "Erfolg", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    // Fehlermeldung bei einem Fehler
+                    MessageBox.Show($"Fehler beim Löschen der Datenbanktabelle: {ex.Message}", "Fehler", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            else
+            {
+                // Wenn der Benutzer mit "Nein" bestätigt, keine Aktion unternehmen
+                MessageBox.Show("Das Löschen der Tabelle wurde abgebrochen.", "Abgebrochen", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
         }
 
 
@@ -201,5 +226,152 @@ namespace BookcastLexicon
                 return $"Fehler beim Löschen der Zeile: {ex.Message}";
             }
         }
+
+        public static void ExportDatabaseToExcel()
+        {
+            try
+            {
+                string query = "SELECT * FROM BookcastDB";
+
+                SQLiteCommand sqlite_cmd = sqlite_conn.CreateCommand();
+                sqlite_cmd.CommandText = query;
+
+                SQLiteDataReader reader = sqlite_cmd.ExecuteReader();
+
+                using (var workbook = new XLWorkbook())
+                {
+                    var worksheet = workbook.Worksheets.Add("BookcastDB");
+
+                    worksheet.Cell(1, 1).Value = "Buchtitel";
+                    worksheet.Cell(1, 2).Value = "Folgennummer";
+                    worksheet.Cell(1, 3).Value = "Zeitangabe";
+                    worksheet.Cell(1, 4).Value = "Schlagwort";
+                    worksheet.Cell(1, 5).Value = "Infos";
+                    worksheet.Cell(1, 6).Value = "Quellen";
+
+                    int row = 2; 
+
+                    while (reader.Read())
+                    {
+                        worksheet.Cell(row, 1).Value = reader.IsDBNull(0) ? "NULL" : reader["Buchtitel"].ToString();
+                        worksheet.Cell(row, 2).Value = reader.IsDBNull(1) ? "NULL" : reader["Folgennummer"].ToString();
+                        worksheet.Cell(row, 3).Value = reader.IsDBNull(2) ? "NULL" : reader["Zeitangabe"].ToString();
+                        worksheet.Cell(row, 4).Value = reader.IsDBNull(3) ? "NULL" : reader["Schlagwort"].ToString();
+                        worksheet.Cell(row, 5).Value = reader.IsDBNull(4) ? "NULL" : reader["Infos"].ToString();
+                        worksheet.Cell(row, 6).Value = reader.IsDBNull(5) ? "NULL" : reader["Quellen"].ToString();
+
+                        row++;
+                    }
+
+                    using (SaveFileDialog saveFileDialog = new SaveFileDialog())
+                    {
+                        saveFileDialog.Filter = "Excel-Dateien (*.xlsx)|*.xlsx"; 
+                        saveFileDialog.DefaultExt = ".xlsx";  
+                        saveFileDialog.FileName = "BookcastDB_Export.xlsx";
+
+                        if (saveFileDialog.ShowDialog() == DialogResult.OK)
+                        {
+                            string filePath = saveFileDialog.FileName;
+                            workbook.SaveAs(filePath);
+                            MessageBox.Show("Daten wurden erfolgreich in eine Excel-Datei exportiert.", "Export Erfolgreich", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Fehler beim Exportieren der Daten: {ex.Message}", "Fehler", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+
+        public static void ImportDataFromExcel()
+        {
+            // Abfrage vor dem Überschreiben der bestehenden Datenbank
+            DialogResult dialogResult = MessageBox.Show("Möchten Sie die bestehende Datenbank überschreiben?", "Bestätigung", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+
+            if (dialogResult == DialogResult.Yes)
+            {
+                // Excel-Datei auswählen
+                using (OpenFileDialog openFileDialog = new OpenFileDialog())
+                {
+                    openFileDialog.Filter = "Excel-Dateien (*.xls; *.xlsx)|*.xls; *.xlsx";  // Filter für Excel-Dateien
+                    openFileDialog.Title = "Wählen Sie eine Excel-Datei zum Importieren aus";
+
+                    // Wenn der Benutzer eine Datei auswählt
+                    if (openFileDialog.ShowDialog() == DialogResult.OK)
+                    {
+                        string filePath = openFileDialog.FileName;
+
+                        // Überprüfen, ob die Excel-Datei existiert
+                        if (File.Exists(filePath))
+                        {
+                            try
+                            {
+                                // Excel-Anwendung starten
+                                Excel.Application xlApp = new Excel.Application();
+                                Excel.Workbook xlWorkbook = xlApp.Workbooks.Open(filePath);
+                                Excel._Worksheet xlWorksheet = xlWorkbook.Sheets[1];
+                                Excel.Range xlRange = xlWorksheet.UsedRange;
+
+                                // Tabelle überschreiben (vorher sicherstellen, dass sie existiert)
+                                string dropTableSQL = "DROP TABLE IF EXISTS BookcastDB";
+                                SQLiteCommand sqlite_cmd = sqlite_conn.CreateCommand();
+                                sqlite_cmd.CommandText = dropTableSQL;
+                                sqlite_cmd.ExecuteNonQuery();
+
+                                // Neue Tabelle anlegen
+                                CreateTable();
+
+                                // Excel-Daten in die Tabelle einfügen
+                                for (int row = 2; row <= xlRange.Rows.Count; row++) // Beginnt ab der zweiten Zeile (Überschrift überspringen)
+                                {
+                                    string buchtitel = xlRange.Cells[row, 1].Text.ToString();
+                                    string folgennummer = xlRange.Cells[row, 2].Text.ToString();
+                                    string zeitangabe = xlRange.Cells[row, 3].Text.ToString();
+                                    string schlagwort = xlRange.Cells[row, 4].Text.ToString();
+                                    string infos = xlRange.Cells[row, 5].Text.ToString();
+                                    string quellen = xlRange.Cells[row, 6].Text.ToString();
+
+                                    string insertDataSQL = "INSERT INTO BookcastDB (Buchtitel, Folgennummer, Zeitangabe, Schlagwort, Infos, Quellen) " +
+                                                           "VALUES (@buchtitel, @folgennummer, @zeitangabe, @schlagwort, @infos, @quellen)";
+
+                                    sqlite_cmd.CommandText = insertDataSQL;
+                                    sqlite_cmd.Parameters.AddWithValue("@buchtitel", buchtitel);
+                                    sqlite_cmd.Parameters.AddWithValue("@folgennummer", folgennummer);
+                                    sqlite_cmd.Parameters.AddWithValue("@zeitangabe", zeitangabe);
+                                    sqlite_cmd.Parameters.AddWithValue("@schlagwort", schlagwort);
+                                    sqlite_cmd.Parameters.AddWithValue("@infos", infos);
+                                    sqlite_cmd.Parameters.AddWithValue("@quellen", quellen);
+
+                                    sqlite_cmd.ExecuteNonQuery();
+                                }
+
+                                // Schließen der Excel-Datei
+                                xlWorkbook.Close();
+                                xlApp.Quit();
+
+                                // Bestätigung für den erfolgreichen Import
+                                MessageBox.Show("Daten wurden erfolgreich importiert und die Datenbank überschrieben.",
+                                                "Import Erfolgreich",
+                                                MessageBoxButtons.OK,
+                                                MessageBoxIcon.Information);
+                            }
+                            catch (Exception ex)
+                            {
+                                // Fehlerbehandlung, falls etwas schief geht
+                                MessageBox.Show($"Fehler beim Importieren der Excel-Daten: {ex.Message}", "Fehler", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // Falls der Benutzer mit Nein bestätigt, abbrechen
+                MessageBox.Show("Die Datenbanküberschreibung wurde abgebrochen.", "Abgebrochen", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+
     }
 }

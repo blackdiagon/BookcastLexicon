@@ -30,6 +30,7 @@ namespace BookcastLexicon
             button4.Visible = true;
             button5.Text = "Übergeben";
             button5.Visible = true;
+            button8.Visible = false;
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -44,6 +45,7 @@ namespace BookcastLexicon
             button4.Visible = true;
             button5.Text = "Löschen";
             button5.Visible = true;
+            button8.Visible = false;
         
         }
 
@@ -60,6 +62,7 @@ namespace BookcastLexicon
             button4.Visible = true;
             button5.Text = "Suchen";
             button5.Visible = true;
+            button8.Visible = false;
         }
 
         private void button4_Click(object sender, EventArgs e)
@@ -71,7 +74,13 @@ namespace BookcastLexicon
             button3.Visible = true;
             button4.Visible = false;
             button5.Visible = false;
+            button6.Visible = false;
+            button7.Visible = false;
+            button8.Visible = true;
+            button9.Visible = false;
+            button10.Visible = false;
             textBox1.Text = string.Empty;
+
         }
 
         private void button5_Click(object sender, EventArgs e)
@@ -94,9 +103,18 @@ namespace BookcastLexicon
 
         private void hasEnteredPrompt() 
         {
+
             switch (button5.Text)
             {
                 case "Übergeben":
+
+
+                    try
+                    {
+                        Program.CreateTable();
+                    }
+                    catch { }
+
                     textBox1.Text = Program.CommitValues(splitStrings(textBox1.Text.Trim()));
                     break;
 
@@ -117,6 +135,37 @@ namespace BookcastLexicon
         {
             textBox1.Clear();
             button6.Hide();
+        }
+
+        private void button8_Click(object sender, EventArgs e)
+        {
+            textBox1.Visible = false;
+            label2.Visible = false;
+            button1.Visible = false;
+            button2.Visible = false;
+            button3.Visible = false;
+            button4.Visible = true;
+            button5.Visible = false;
+            button6.Visible = false;
+            button7.Visible = true;
+            button8.Visible = false;
+            button9.Visible = true;
+            button10.Visible = true;
+        }
+
+        private void button9_Click(object sender, EventArgs e)
+        {
+            Program.ExportDatabaseToExcel();
+        }
+
+        private void button7_Click(object sender, EventArgs e)
+        {
+            Program.DropTable();
+        }
+
+        private void button10_Click(object sender, EventArgs e)
+        {
+            Program.ImportDataFromExcel();
         }
     }
 }
