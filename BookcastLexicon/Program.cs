@@ -30,8 +30,6 @@ namespace BookcastLexicon
 
             catch { }
 
-            //DropTable(sqlite_conn);
-
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new Form1()); 
@@ -42,7 +40,8 @@ namespace BookcastLexicon
 
             SQLiteConnection sqlite_conn;
             sqlite_conn = new SQLiteConnection("Data Source=database.db; Version = 3; New = True; Compress = True; ");
-         try
+            
+            try
             {
                 sqlite_conn.Open();
             }
@@ -110,33 +109,27 @@ namespace BookcastLexicon
 
         public static void DropTable()
         {
-            // Zeige eine MessageBox zur Bestätigung an
             DialogResult dialogResult = MessageBox.Show("Möchten Sie die Datenbank wirklich löschen?", "Bestätigung", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
 
-            // Wenn der Benutzer mit "Ja" bestätigt
             if (dialogResult == DialogResult.Yes)
             {
                 try
                 {
-                    // SQL-Befehl zum Löschen der Tabelle
                     string dropTableSQL = "DROP TABLE IF EXISTS BookcastDB";
 
                     SQLiteCommand sqlite_cmd = sqlite_conn.CreateCommand();
                     sqlite_cmd.CommandText = dropTableSQL;
                     sqlite_cmd.ExecuteNonQuery();
 
-                    // Bestätigung über erfolgreichen Löschvorgang
                     MessageBox.Show("Die Datenbanktabelle wurde erfolgreich gelöscht.", "Erfolg", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
                 catch (Exception ex)
                 {
-                    // Fehlermeldung bei einem Fehler
                     MessageBox.Show($"Fehler beim Löschen der Datenbanktabelle: {ex.Message}", "Fehler", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
             else
             {
-                // Wenn der Benutzer mit "Nein" bestätigt, keine Aktion unternehmen
                 MessageBox.Show("Das Löschen der Tabelle wurde abgebrochen.", "Abgebrochen", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
@@ -287,44 +280,36 @@ namespace BookcastLexicon
 
         public static void ImportDataFromExcel()
         {
-            // Abfrage vor dem Überschreiben der bestehenden Datenbank
             DialogResult dialogResult = MessageBox.Show("Möchten Sie die bestehende Datenbank überschreiben?", "Bestätigung", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
 
             if (dialogResult == DialogResult.Yes)
             {
-                // Excel-Datei auswählen
                 using (OpenFileDialog openFileDialog = new OpenFileDialog())
                 {
-                    openFileDialog.Filter = "Excel-Dateien (*.xls; *.xlsx)|*.xls; *.xlsx";  // Filter für Excel-Dateien
+                    openFileDialog.Filter = "Excel-Dateien (*.xls; *.xlsx)|*.xls; *.xlsx"; 
                     openFileDialog.Title = "Wählen Sie eine Excel-Datei zum Importieren aus";
 
-                    // Wenn der Benutzer eine Datei auswählt
                     if (openFileDialog.ShowDialog() == DialogResult.OK)
                     {
                         string filePath = openFileDialog.FileName;
 
-                        // Überprüfen, ob die Excel-Datei existiert
                         if (File.Exists(filePath))
                         {
                             try
                             {
-                                // Excel-Anwendung starten
                                 Excel.Application xlApp = new Excel.Application();
                                 Excel.Workbook xlWorkbook = xlApp.Workbooks.Open(filePath);
                                 Excel._Worksheet xlWorksheet = xlWorkbook.Sheets[1];
                                 Excel.Range xlRange = xlWorksheet.UsedRange;
 
-                                // Tabelle überschreiben (vorher sicherstellen, dass sie existiert)
                                 string dropTableSQL = "DROP TABLE IF EXISTS BookcastDB";
                                 SQLiteCommand sqlite_cmd = sqlite_conn.CreateCommand();
                                 sqlite_cmd.CommandText = dropTableSQL;
                                 sqlite_cmd.ExecuteNonQuery();
 
-                                // Neue Tabelle anlegen
                                 CreateTable();
 
-                                // Excel-Daten in die Tabelle einfügen
-                                for (int row = 2; row <= xlRange.Rows.Count; row++) // Beginnt ab der zweiten Zeile (Überschrift überspringen)
+                                for (int row = 2; row <= xlRange.Rows.Count; row++) 
                                 {
                                     string buchtitel = xlRange.Cells[row, 1].Text.ToString();
                                     string folgennummer = xlRange.Cells[row, 2].Text.ToString();
@@ -347,11 +332,9 @@ namespace BookcastLexicon
                                     sqlite_cmd.ExecuteNonQuery();
                                 }
 
-                                // Schließen der Excel-Datei
                                 xlWorkbook.Close();
                                 xlApp.Quit();
 
-                                // Bestätigung für den erfolgreichen Import
                                 MessageBox.Show("Daten wurden erfolgreich importiert und die Datenbank überschrieben.",
                                                 "Import Erfolgreich",
                                                 MessageBoxButtons.OK,
@@ -359,7 +342,6 @@ namespace BookcastLexicon
                             }
                             catch (Exception ex)
                             {
-                                // Fehlerbehandlung, falls etwas schief geht
                                 MessageBox.Show($"Fehler beim Importieren der Excel-Daten: {ex.Message}", "Fehler", MessageBoxButtons.OK, MessageBoxIcon.Error);
                             }
                         }
@@ -368,7 +350,6 @@ namespace BookcastLexicon
             }
             else
             {
-                // Falls der Benutzer mit Nein bestätigt, abbrechen
                 MessageBox.Show("Die Datenbanküberschreibung wurde abgebrochen.", "Abgebrochen", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
