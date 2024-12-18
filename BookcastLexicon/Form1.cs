@@ -22,13 +22,13 @@ namespace BookcastLexicon
             textBox1.Visible = true;
             textBox1.Multiline = true;
             textBox1.ScrollBars = ScrollBars.Vertical;
+            button5.Text = "Übergeben";
             label2.Text = "Bitte gib die Werte wie folgt an:\r\n\r\nBuchtitel-#Folgennummer-Zeitangabe-Schlagwort-Infos-Quellen\r\n\r\nBeispiel:\r\nStein der Weisen - #16 - 1:05:38 - Eule - Hedwig beißt Harry, habe Eulenverhalten analyisert - wikipedia.de/eulen";
             label2.Visible = true;
             button1.Visible = false;
             button2.Visible = false;
             button3.Visible = false;
             button4.Visible = true;
-            button5.Text = "Übergeben";
             button5.Visible = true;
             button8.Visible = false;
         }
@@ -37,13 +37,13 @@ namespace BookcastLexicon
         {
             textBox1.Visible = true;
             textBox1.Multiline = false;
+            button5.Text = "Löschen";
             label2.Text = "Bitte lösche eine Zeile durch Angabe der folgenden Werte: \n\nBuchtitel-#Folgennummer-Zeitangabe-Schlagwort\n\nBeispiel:\nStein der Weisen - #16 - 1:05:38 - Eule";
             label2.Visible = true;
             button1.Visible = false;
             button2.Visible = false;
             button3.Visible = false;
             button4.Visible = true;
-            button5.Text = "Löschen";
             button5.Visible = true;
             button8.Visible = false;
         
@@ -54,13 +54,13 @@ namespace BookcastLexicon
             textBox1.Visible = true;
             textBox1.Multiline = true;
             textBox1.ScrollBars = ScrollBars.Vertical;
+            button5.Text = "Suchen";
             label2.Text = "Bitte gib ein Schlagwort ein, nach dem du suchen möchtest, z.B. Eule.";
             label2.Visible = true;
             button1.Visible = false;
             button2.Visible = false;
             button3.Visible = false;
             button4.Visible = true;
-            button5.Text = "Suchen";
             button5.Visible = true;
             button8.Visible = false;
         }
@@ -168,5 +168,9 @@ namespace BookcastLexicon
             Program.ImportDataFromExcel();
         }
 
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            Program.sqlite_conn.Close();
+        }
     }
 }
